@@ -1,0 +1,931 @@
+options:
+  parameters:
+    author: ''
+    catch_exceptions: 'True'
+    category: '[GRC Hier Blocks]'
+    cmake_opt: ''
+    comment: ''
+    copyright: ''
+    description: ''
+    gen_cmake: 'On'
+    gen_linking: dynamic
+    generate_options: qt_gui
+    hier_block_src_path: '.:'
+    id: bir_yt
+    max_nouts: '0'
+    output_language: python
+    placement: (0,0)
+    qt_qss_theme: ''
+    realtime_scheduling: ''
+    run: 'True'
+    run_command: '{python} -u {filename}'
+    run_options: prompt
+    sizing_mode: fixed
+    thread_safe_setters: ''
+    title: Not titled yet
+    window_size: (1000,1000)
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [8, 8]
+    rotation: 0
+    state: enabled
+
+blocks:
+- name: Dead_space
+  id: variable
+  parameters:
+    comment: ''
+    value: '5000'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [224, 244.0]
+    rotation: 0
+    state: true
+- name: Decim
+  id: variable
+  parameters:
+    comment: ''
+    value: '2'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [432, 44.0]
+    rotation: 0
+    state: true
+- name: Inter
+  id: variable
+  parameters:
+    comment: ''
+    value: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [360, 124.0]
+    rotation: 0
+    state: true
+- name: center_freq
+  id: variable
+  parameters:
+    comment: ''
+    value: channel_freq
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [32, 164.0]
+    rotation: 0
+    state: enabled
+- name: channel_freq
+  id: variable_qtgui_range
+  parameters:
+    comment: ''
+    gui_hint: ''
+    label: ''
+    min_len: '200'
+    orient: QtCore.Qt.Horizontal
+    rangeType: float
+    start: 433.92e6
+    step: '1000'
+    stop: 433.92e6
+    value: '433920000'
+    widget: counter_slider
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [16, 236.0]
+    rotation: 0
+    state: enabled
+- name: channel_width
+  id: variable_qtgui_range
+  parameters:
+    comment: ''
+    gui_hint: ''
+    label: ''
+    min_len: '200'
+    orient: QtCore.Qt.Horizontal
+    rangeType: float
+    start: '500'
+    step: '100'
+    stop: '50000'
+    value: '20000'
+    widget: counter_slider
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [40, 356.0]
+    rotation: 0
+    state: enabled
+- name: edge_offset
+  id: variable
+  parameters:
+    comment: ''
+    value: '20'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [272, 28.0]
+    rotation: 0
+    state: true
+- name: fftsize
+  id: variable
+  parameters:
+    comment: ''
+    value: '512'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [128, 100.0]
+    rotation: 0
+    state: enabled
+- name: manchester_decoding
+  id: variable
+  parameters:
+    comment: ''
+    value: 'True'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [24, 492.0]
+    rotation: 0
+    state: true
+- name: number_of_preamble_bits
+  id: variable
+  parameters:
+    comment: ''
+    value: '6'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [200, 156.0]
+    rotation: 0
+    state: true
+- name: samp_rate
+  id: variable
+  parameters:
+    comment: ''
+    value: '32000'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [184, 12]
+    rotation: 0
+    state: enabled
+- name: samp_rate_0
+  id: variable
+  parameters:
+    comment: ''
+    value: '2400000'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [32, 100.0]
+    rotation: 0
+    state: enabled
+- name: blocks_complex_to_mag_0
+  id: blocks_complex_to_mag
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [544, 448.0]
+    rotation: 0
+    state: true
+- name: blocks_threshold_ff_0
+  id: blocks_threshold_ff
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    high: '0.5'
+    init: '0'
+    low: '0.3'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1256, 444.0]
+    rotation: 0
+    state: true
+- name: interp_fir_filter_xxx_0
+  id: interp_fir_filter_xxx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    interp: '1'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    samp_delay: '0'
+    taps: '[1,1]'
+    type: fff
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [768, 444.0]
+    rotation: 0
+    state: true
+- name: ook_demod_block
+  id: epy_block
+  parameters:
+    _source_code: "\"\"\"\nEmbedded Python Blocks:\n\nEach time this file is saved,\
+      \ GRC will instantiate the first class it finds\nto get ports and parameters\
+      \ of your block. The arguments to __init__  will\nbe the parameters. All of\
+      \ them are required to have default values!\n\"\"\"\n\nimport numpy as np\n\
+      from gnuradio import gr\nimport sys\n\ndata_set = np.array([])\nstart = int(0)\n\
+      stop = int(0)\nsize = int(0)\nstate = int(1)\nkeep_track_flag = int(0)\nold_message\
+      \ = []\nnumber_of_bits = 25 # TODO - ustawi\u0107 to bardziej w dynamiczny sposob\n\
+      \nclass blk(gr.sync_block):  # other base classes are basic_block, decim_block,\
+      \ interp_block\n    \"\"\"Embedded Python Block example - a simple multiply\
+      \ const\"\"\"\n    \n\n    def __init__(self, preamble_bits=1, edge_offset=1,\
+      \ dead_space=1):  # only default arguments here\n        \"\"\"arguments to\
+      \ this function show up as parameters in GRC\"\"\"\n        gr.sync_block.__init__(\n\
+      \            self,\n            name='OOK Custom Decoder',   # will show up\
+      \ in GRC\n            in_sig=[np.float32],\n            out_sig=None\n     \
+      \   )\n        # if an attribute with the same name as a parameter is found,11\n\
+      \        # a callback is registered (properties work, too).\n        self.preamble_bits\
+      \ = preamble_bits\n        self.edge_offset = edge_offset\n        self.dead_space\
+      \ = dead_space\n\n    def work(self, input_items, output_items):\n        \"\
+      \"\"example: multiply with constant\"\"\"\n        in0 = np.array(input_items[0])\n\
+      \        \n        global state\n        global data_set\n        global start\n\
+      \        global stop\n        global size\n        global keep_track_flag\n\
+      \        global old_message\n        \n        if state == 1:\n            #Looking\
+      \ for a blank space before the message.\n            if np.any(in0 > 0.5):\n\
+      \                #Reset size and start over. \n                size = 0\n  \
+      \          else:\n                size = size + len(in0)\n                #Once\
+      \ enough blank space has gone by start looking for the message.\n          \
+      \      if size > self.dead_space: #This value is imperically found. \n     \
+      \               size = 0\n                    state = 2\n        \n        #look\
+      \ for a leading edge\n        if state == 2:\n            #Calculate sample\
+      \ 1 minus sample 2. This looks for any edge positive or negative. \n       \
+      \     leading_edge = np.abs(in0[:-1] - in0[1:]) > .5\n            #Check if\
+      \ any edge is found. \n            if np.any(leading_edge == True):\n      \
+      \          #When edge is found start looking for the trailing edge\n       \
+      \         state = 3\n                #Store the data because it will span several\
+      \ frames.\n                data_set = np.append(data_set, in0)\n           \
+      \     \n            \n            \n        #look for a trailing edge (looking\
+      \ for silence)\n        if state == 3:\n            #Keep storing the data while\
+      \ looking for the trailing edge. \n            data_set = np.append( data_set,\
+      \ in0)\n            #Calculate sample 1 minus sample 2. This looks for any edge\
+      \ positive or negative.\n            trailing_edge = np.abs(in0[:-1] - in0[1:])\
+      \ > 0.5\n            #Check if any go positive. \n            if np.any(trailing_edge\
+      \ == True):\n                size = 0\n            else:\n                size\
+      \ = size + len(in0)\n                #if a long enough stretch is found after\
+      \ the message the it ended. \n                if size > self.dead_space: #This\
+      \ value is imperically found.\n                    size = 0\n              \
+      \      state = 4\n            \n        #analyze the data\n        if state\
+      \ == 4:\n            \n            \n            #file = open('C:\\logs\\data_set.txt','a')\n\
+      \            #intermediate = data_set.astype(int)\n            #intermediate2\
+      \ = \",\\r\".join(intermediate.astype(str))\n            #file.write(intermediate2)\n\
+      \            #file.write(\"\\r,space\\r,\")\n            #file.close()\n   \
+      \         \n            \n            #If the data set is greater than 70000\
+      \ the it is the first packet\n            #The first packet has a wake up signal\
+      \ of 72 bits and then the message.\n            if len(data_set) > 30000:\n\
+      \                #Find the edges\n                edges = np.abs(data_set[:-1]\
+      \ - data_set[1:]) > 0.5\n                #Grab the locations of the edges.\n\
+      \                edge_locations = np.where(edges)[0]\n                #Find\
+      \ the difference between the edges.\n                edge_difference = edge_locations[1:]\
+      \ - edge_locations[:-1]\n                #debug\n                #print 'data\
+      \ length', len(data_set)\n                #print 'edge diferences', edge_difference[:20]\n\
+      \                #Grab the edge difference into the packet preamble.\n     \
+      \           try:\n                    #Sometime this picks up garbadge and the\
+      \ try helps to keep it from crashing\n                    # nie mamy preambuly\
+      \ - chcemy inaczej wyliczy\u0107 sredni\u0105: TODO\n                    average\
+      \ = edge_difference[self.preamble_bits * 2]\n                    average_found\
+      \ = True\n                except:\n                    average_found = False\n\
+      \                #Make sure that there are enough edges to do something usefull.\
+      \ \n                if average_found and len(edge_difference) > (self.preamble_bits\
+      \ * 2):\n                    #Trim down how big the edge difference is.\n  \
+      \                  edge_difference = edge_difference[:self.preamble_bits * 2]\n\
+      \                    #print 'average', average\n                    #Filter\
+      \ edge_difference to eliminate everything greater than 110% and less than 90%\n\
+      \                    #This should eliminate everything at the begining that\
+      \ is not the preable. \n                    looking_for_start_edge_positive\
+      \ = edge_difference < (average * 1.1)\n                    looking_for_start_edge_negative\
+      \ = edge_difference > (average * 0.9)\n                    #Logical and together\
+      \ the two to get something that eliminates both. \n                    looking_for_start_edge\
+      \ = np.logical_and(looking_for_start_edge_positive, looking_for_start_edge_negative)\n\
+      \                    #print looking_for_start_edge[:15]\n                  \
+      \  #Grab all the locations that are true. \n                    check_if_consecutive\
+      \ = np.where(looking_for_start_edge)[0]\n                    #print 'check if\
+      \ consecutive', check_if_consecutive\n                    #print 'len of check\
+      \ if consecutive', len( check_if_consecutive)\n                    #Create an\
+      \ array that should be the same if it is consecutive. \n                   \
+      \ consecutive_array = np.arange(check_if_consecutive[0], check_if_consecutive[-1]\
+      \ + 1)\n                    #print 'consecutive array', consecutive_array\n\
+      \                    #Ther arrays may be different sizes and causing the check\
+      \ to throw and exception.\n                    \n                    \n    \
+      \                #Set compare to false ahead of time.\n                    compare\
+      \ = False\n                    for i in range(3):\n                        #If\
+      \ they are different sizes then they can't be consecuitve.\n               \
+      \         if len( check_if_consecutive) == len( consecutive_array):\n      \
+      \                      #Compare together the consecutive array and the check\
+      \ if consecutive. \n                            #If the arrays are not consecutive\
+      \ the check will fail. \n                            if np.all(np.equal(check_if_consecutive,\
+      \ consecutive_array)):\n                                compare = True\n   \
+      \                             #If the arrays are consecutive leave the for loop.\n\
+      \                                break\n                        #Sometimes just\
+      \ one stray edge is the correct size.\n                        #Try trimming\
+      \ the first edge and check for consecutive.\n                        #Because\
+      \ of the for loop this is done up to 3 times. \n                        #If\
+      \ the array is not consecutive by then, it won't be. \n                    \
+      \    check_if_consecutive = check_if_consecutive[1:]\n                     \
+      \   #Create an array that should be the same if it is consecutive. \n      \
+      \                  consecutive_array = np.arange(check_if_consecutive[0], check_if_consecutive[-1]\
+      \ + 1)\n                    if compare:\n                        #Average together\
+      \ the preamble to get what the clock speed is. \n                        period\
+      \ = int(np.average(edge_difference[check_if_consecutive[0]: check_if_consecutive[-1]\
+      \ + 1]))\n                        #debug\n                        #print 'check_if_consecutive',\
+      \ check_if_consecutive[0]\n                        #print 'edge locations',\
+      \ edge_locations[:10]\n                        #print 'the preable was consecustive',\
+      \ edge_locations[check_if_consecutive[0]]\n                        #This is\
+      \ where the leading edge of the preable is. \n                        #It is\
+      \ offset by one to properly align the manchester coding.\n                 \
+      \       start = edge_locations[check_if_consecutive[0]]\n                  \
+      \      #Trim edge locations\n                        edge_locations = edge_locations[check_if_consecutive[0]:]\n\
+      \                        \n                        \n                      \
+      \  #Now create a sampling array that alignes with the data. \n             \
+      \           ticks_positive = np.arange(start - self.edge_offset, (start - self.edge_offset)\
+      \ + (period * 88), period, dtype=np.int)\n                        ticks_negative\
+      \ = np.arange(start + self.edge_offset, (start - self.edge_offset) + (period\
+      \ * 88), period, dtype=np.int)\n                        \n                 \
+      \       # To keep things from crashing\n                        if ticks_negative[-1]\
+      \ < len(data_set):\n                            #The data seems to have some\
+      \ gitter or drift. \n                            #Make an array of only desired\
+      \ edges.\n                            optimised_edges = np.array([edge_locations[0]])\n\
+      \                            for g in range(1,len(edge_locations)):\n      \
+      \                          if((edge_locations[g]-optimised_edges[-1])<(period*1.2))and((edge_locations[g]-optimised_edges[-1])>(period*0.8)):\n\
+      \                                    optimised_edges = np.append(optimised_edges,edge_locations[g])\n\
+      \                            #Now that we have the edges we can optimise the\
+      \ sampling locations.\n                            for h in range(len(optimised_edges)):\n\
+      \                                if ticks_positive[h] >= optimised_edges[h]:\n\
+      \                                    adjustment = ticks_positive[h] - optimised_edges[h]\
+      \ + self.edge_offset\n                                    ticks_negative[h:]\
+      \ -= adjustment\n                                    ticks_positive[h:] -= adjustment\n\
+      \                                    \n                                if ticks_negative[h]\
+      \ <= optimised_edges[h]:\n                                    adjustment = optimised_edges[h]\
+      \ - ticks_negative[h] + self.edge_offset\n                                 \
+      \   ticks_negative[h:] += adjustment\n                                    ticks_positive[h:]\
+      \ += adjustment\n                            \n                            #\
+      \ Convert the data to high and low \n                            converted_data\
+      \ = data_set > 0.5\n                            #Reshape the data \n       \
+      \                     # TODO 88 = 11 bytes * 8 (bytes to bit)\n            \
+      \                positive_packet = converted_data[ticks_positive].reshape(88)\n\
+      \                            neagtive_packet = converted_data[ticks_negative].reshape(88)\n\
+      \                            \n                            # if keep_track_flag\
+      \ == 0:\n                                # file = open('C:\\logs\\data_set.txt','a')\n\
+      \                                # intermediate = data_set.astype(int)\n   \
+      \                             # intermediate2 = \",\\r\".join(intermediate.astype(str))\n\
+      \                                # file.write(intermediate2)\n             \
+      \                   # file.write(\",\\r space,\\r\")\n                     \
+      \           # intermediate =  \",\\r\".join(ticks_positive.astype(str))\n  \
+      \                              # file.write(intermediate)\n                \
+      \                # file.write(\",\\r space,\\r\")\n                        \
+      \        # intermediate =  \",\\r\".join(ticks_negative.astype(str))\n     \
+      \                           # file.write(intermediate)\n                   \
+      \             # file.write(\",\\r space,\\r\")\n                           \
+      \     # file.close()\n                                # keep_track_flag = 1\n\
+      \                            \n                            \n              \
+      \              # Weryfikacja wiadomosci przy Manchester decoding\n         \
+      \                   if np.all(np.logical_xor(positive_packet,neagtive_packet)):\n\
+      \                                #Without knowing what the information is supposed\
+      \ to look like\n                                #it is a 50/50 chance as to\
+      \ using the positive packet or negative packet.\n                          \
+      \      #The difference being that one gives you IEEE manchester coding\n   \
+      \                             #and the other gives you Thomas coding. \n   \
+      \                             packet = positive_packet.reshape(number_of_bits,8)\n\
+      \                                message = []\n                            \
+      \    message2 = np.zeros((number_of_bits,), dtype=int)\n                   \
+      \             for j in range(number_of_bits):\n                            \
+      \        decimal = sum([packet[j,7-i]*2**i for i in range(len(packet[j,]))])\n\
+      \                                    message2[j] = decimal\n               \
+      \                     message.append(str(\"{0:#0{1}x}\".format(decimal,4)))\n\
+      \                                print(message)\n                          \
+      \      \n                                if old_message != message:\n      \
+      \                              old_message = message\n                     \
+      \               print(message[2:])\n                                    message2[8]\
+      \ = message2[8] - 27\n                                    if message2[8] < 0:\n\
+      \                                        message2[8] = 256 + message2[8]\n \
+      \                                       \n                                 \
+      \   message2[7] += 1\n                                    if message2[7] > 255:\n\
+      \                                        message2[7] = 0\n                 \
+      \                       message2[6] += 1\n                                 \
+      \       if message2[5] > 255:\n                                            message2[5]\
+      \ = 0\n                                            \n                      \
+      \              message2[10] = np.sum(message2[2:10])\n                     \
+      \               while message2[10] > 255:\n                                \
+      \        message2[10] -= 256\n                                    message3 =\
+      \ []\n                                    for j in range(number_of_bits):\n\
+      \                                        message3.append(str(\"{0:#0{1}x}\"\
+      .format(message2[j],4)))\n                                        \n       \
+      \                             print(\"The next message is\")\n             \
+      \                       print(message3[2:])\n                              \
+      \      \n                                    # concatinated_message = []\n \
+      \                                   # for j in range(11):\n                \
+      \                        # decimal = sum([packet[j,7-i]*2**i for i in range(len(packet[j,]))])\n\
+      \                                        # concatinated_message.append(str(\"\
+      {0:02x}\".format(decimal,2)))\n                                    \n      \
+      \                              \n                                    # file\
+      \ = open('C:\\logs\\data_set.txt','a')\n                                   \
+      \ # intermediate = \"\".join(concatinated_message)\n                       \
+      \             # file.write(intermediate)\n                                 \
+      \   # file.write(\" \")\n                                    # file.close()\n\
+      \                                    \n                            else:\n \
+      \                               print('The xor did not resolve.')\n        \
+      \                else:\n                            print('index out during\
+      \ reshape', len( data_set), ticks_negative[-1])\n                         \n\
+      \                    else:\n                        print('the preable was not\
+      \ consecustive', check_if_consecutive, len( check_if_consecutive))\n       \
+      \         else:\n                    print('average failed')\n            else:\n\
+      \                print('the data set was too short')\n            #Reset all\
+      \ the variable for another go around\n            state = 1\n            size\
+      \ = 0\n            start = 0\n            stop = 0\n            data_set = np.array([])\n\
+      \        \n        \n        return len(input_items[0])"
+    affinity: ''
+    alias: ''
+    comment: ''
+    dead_space: Dead_space
+    edge_offset: edge_offset
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    preamble_bits: number_of_preamble_bits
+  states:
+    _io_cache: ('OOK Custom Decoder', 'blk', [('preamble_bits', '1'), ('edge_offset',
+      '1'), ('dead_space', '1')], [('0', 'float', 1)], [], 'Embedded Python Block
+      example - a simple multiply const', ['dead_space', 'edge_offset', 'preamble_bits'])
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1488, 444.0]
+    rotation: 0
+    state: enabled
+- name: qtgui_time_sink_x_0_1_0
+  id: qtgui_time_sink_x
+  parameters:
+    affinity: ''
+    alias: ''
+    alpha1: '1.0'
+    alpha10: '1.0'
+    alpha2: '1.0'
+    alpha3: '1.0'
+    alpha4: '1.0'
+    alpha5: '1.0'
+    alpha6: '1.0'
+    alpha7: '1.0'
+    alpha8: '1.0'
+    alpha9: '1.0'
+    autoscale: 'False'
+    axislabels: 'True'
+    color1: blue
+    color10: dark blue
+    color2: red
+    color3: green
+    color4: black
+    color5: cyan
+    color6: magenta
+    color7: yellow
+    color8: dark red
+    color9: dark green
+    comment: ''
+    ctrlpanel: 'True'
+    entags: 'True'
+    grid: 'False'
+    gui_hint: ''
+    label1: ''
+    label10: ''
+    label2: ''
+    label3: ''
+    label4: ''
+    label5: ''
+    label6: ''
+    label7: ''
+    label8: ''
+    label9: ''
+    legend: 'True'
+    marker1: '-1'
+    marker10: '-1'
+    marker2: '-1'
+    marker3: '-1'
+    marker4: '-1'
+    marker5: '-1'
+    marker6: '-1'
+    marker7: '-1'
+    marker8: '-1'
+    marker9: '-1'
+    name: '"Threshold"'
+    nconnections: '1'
+    size: '150000'
+    srate: '1600000'
+    stemplot: 'False'
+    style1: '1'
+    style10: '1'
+    style2: '1'
+    style3: '1'
+    style4: '1'
+    style5: '1'
+    style6: '1'
+    style7: '1'
+    style8: '1'
+    style9: '1'
+    tr_chan: '0'
+    tr_delay: '0'
+    tr_level: '0.018'
+    tr_mode: qtgui.TRIG_MODE_AUTO
+    tr_slope: qtgui.TRIG_SLOPE_POS
+    tr_tag: '""'
+    type: float
+    update_time: '0.10'
+    width1: '1'
+    width10: '1'
+    width2: '1'
+    width3: '1'
+    width4: '1'
+    width5: '1'
+    width6: '1'
+    width7: '1'
+    width8: '1'
+    width9: '1'
+    ylabel: Amplitude
+    ymax: '1.0'
+    ymin: '-1.0'
+    yunit: '""'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1472, 220.0]
+    rotation: 0
+    state: enabled
+- name: qtgui_time_sink_x_0_1_0_0
+  id: qtgui_time_sink_x
+  parameters:
+    affinity: ''
+    alias: ''
+    alpha1: '1.0'
+    alpha10: '1.0'
+    alpha2: '1.0'
+    alpha3: '1.0'
+    alpha4: '1.0'
+    alpha5: '1.0'
+    alpha6: '1.0'
+    alpha7: '1.0'
+    alpha8: '1.0'
+    alpha9: '1.0'
+    autoscale: 'False'
+    axislabels: 'True'
+    color1: blue
+    color10: dark blue
+    color2: red
+    color3: green
+    color4: black
+    color5: cyan
+    color6: magenta
+    color7: yellow
+    color8: dark red
+    color9: dark green
+    comment: ''
+    ctrlpanel: 'True'
+    entags: 'True'
+    grid: 'False'
+    gui_hint: ''
+    label1: ''
+    label10: ''
+    label2: ''
+    label3: ''
+    label4: ''
+    label5: ''
+    label6: ''
+    label7: ''
+    label8: ''
+    label9: ''
+    legend: 'True'
+    marker1: '-1'
+    marker10: '-1'
+    marker2: '-1'
+    marker3: '-1'
+    marker4: '-1'
+    marker5: '-1'
+    marker6: '-1'
+    marker7: '-1'
+    marker8: '-1'
+    marker9: '-1'
+    name: '"FIR filter"'
+    nconnections: '1'
+    size: '150000'
+    srate: '3200000'
+    stemplot: 'False'
+    style1: '1'
+    style10: '1'
+    style2: '1'
+    style3: '1'
+    style4: '1'
+    style5: '1'
+    style6: '1'
+    style7: '1'
+    style8: '1'
+    style9: '1'
+    tr_chan: '0'
+    tr_delay: '0'
+    tr_level: '0.018'
+    tr_mode: qtgui.TRIG_MODE_AUTO
+    tr_slope: qtgui.TRIG_SLOPE_POS
+    tr_tag: '""'
+    type: float
+    update_time: '0.10'
+    width1: '1'
+    width10: '1'
+    width2: '1'
+    width3: '1'
+    width4: '1'
+    width5: '1'
+    width6: '1'
+    width7: '1'
+    width8: '1'
+    width9: '1'
+    ylabel: Amplitude
+    ymax: '1.0'
+    ymin: '-1.0'
+    yunit: '""'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1048, 212.0]
+    rotation: 0
+    state: disabled
+- name: qtgui_time_sink_x_0_1_0_0_0
+  id: qtgui_time_sink_x
+  parameters:
+    affinity: ''
+    alias: ''
+    alpha1: '1.0'
+    alpha10: '1.0'
+    alpha2: '1.0'
+    alpha3: '1.0'
+    alpha4: '1.0'
+    alpha5: '1.0'
+    alpha6: '1.0'
+    alpha7: '1.0'
+    alpha8: '1.0'
+    alpha9: '1.0'
+    autoscale: 'False'
+    axislabels: 'True'
+    color1: blue
+    color10: dark blue
+    color2: red
+    color3: green
+    color4: black
+    color5: cyan
+    color6: magenta
+    color7: yellow
+    color8: dark red
+    color9: dark green
+    comment: ''
+    ctrlpanel: 'True'
+    entags: 'True'
+    grid: 'False'
+    gui_hint: ''
+    label1: ''
+    label10: ''
+    label2: ''
+    label3: ''
+    label4: ''
+    label5: ''
+    label6: ''
+    label7: ''
+    label8: ''
+    label9: ''
+    legend: 'True'
+    marker1: '-1'
+    marker10: '-1'
+    marker2: '-1'
+    marker3: '-1'
+    marker4: '-1'
+    marker5: '-1'
+    marker6: '-1'
+    marker7: '-1'
+    marker8: '-1'
+    marker9: '-1'
+    name: '"Rational Resampler"'
+    nconnections: '1'
+    size: '150000'
+    srate: '1600000'
+    stemplot: 'False'
+    style1: '1'
+    style10: '1'
+    style2: '1'
+    style3: '1'
+    style4: '1'
+    style5: '1'
+    style6: '1'
+    style7: '1'
+    style8: '1'
+    style9: '1'
+    tr_chan: '0'
+    tr_delay: '0'
+    tr_level: '0.018'
+    tr_mode: qtgui.TRIG_MODE_AUTO
+    tr_slope: qtgui.TRIG_SLOPE_POS
+    tr_tag: '""'
+    type: float
+    update_time: '0.10'
+    width1: '1'
+    width10: '1'
+    width2: '1'
+    width3: '1'
+    width4: '1'
+    width5: '1'
+    width6: '1'
+    width7: '1'
+    width8: '1'
+    width9: '1'
+    ylabel: Amplitude
+    ymax: '1.0'
+    ymin: '-1.0'
+    yunit: '""'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1264, 196.0]
+    rotation: 0
+    state: disabled
+- name: qtgui_time_sink_x_0_1_0_0_1
+  id: qtgui_time_sink_x
+  parameters:
+    affinity: ''
+    alias: ''
+    alpha1: '1.0'
+    alpha10: '1.0'
+    alpha2: '1.0'
+    alpha3: '1.0'
+    alpha4: '1.0'
+    alpha5: '1.0'
+    alpha6: '1.0'
+    alpha7: '1.0'
+    alpha8: '1.0'
+    alpha9: '1.0'
+    autoscale: 'False'
+    axislabels: 'True'
+    color1: blue
+    color10: dark blue
+    color2: red
+    color3: green
+    color4: black
+    color5: cyan
+    color6: magenta
+    color7: yellow
+    color8: dark red
+    color9: dark green
+    comment: ''
+    ctrlpanel: 'True'
+    entags: 'True'
+    grid: 'False'
+    gui_hint: ''
+    label1: ''
+    label10: ''
+    label2: ''
+    label3: ''
+    label4: ''
+    label5: ''
+    label6: ''
+    label7: ''
+    label8: ''
+    label9: ''
+    legend: 'True'
+    marker1: '-1'
+    marker10: '-1'
+    marker2: '-1'
+    marker3: '-1'
+    marker4: '-1'
+    marker5: '-1'
+    marker6: '-1'
+    marker7: '-1'
+    marker8: '-1'
+    marker9: '-1'
+    name: '"Complex to mag"'
+    nconnections: '1'
+    size: '150000'
+    srate: '3200000'
+    stemplot: 'False'
+    style1: '1'
+    style10: '1'
+    style2: '1'
+    style3: '1'
+    style4: '1'
+    style5: '1'
+    style6: '1'
+    style7: '1'
+    style8: '1'
+    style9: '1'
+    tr_chan: '0'
+    tr_delay: '0'
+    tr_level: '0.018'
+    tr_mode: qtgui.TRIG_MODE_AUTO
+    tr_slope: qtgui.TRIG_SLOPE_POS
+    tr_tag: '""'
+    type: float
+    update_time: '0.10'
+    width1: '1'
+    width10: '1'
+    width2: '1'
+    width3: '1'
+    width4: '1'
+    width5: '1'
+    width6: '1'
+    width7: '1'
+    width8: '1'
+    width9: '1'
+    ylabel: Amplitude
+    ymax: '1.0'
+    ymin: '-1.0'
+    yunit: '""'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [776, 220.0]
+    rotation: 0
+    state: disabled
+- name: rational_resampler_xxx_0
+  id: rational_resampler_xxx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    decim: Decim
+    fbw: '0'
+    interp: Inter
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    taps: '[]'
+    type: fff
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1024, 436.0]
+    rotation: 0
+    state: true
+- name: soapy_rtlsdr_source_0
+  id: soapy_rtlsdr_source
+  parameters:
+    affinity: ''
+    agc: 'False'
+    alias: ''
+    bias: 'False'
+    bufflen: '16384'
+    center_freq: center_freq
+    comment: ''
+    dev_args: ''
+    freq_correction: '0'
+    gain: '20'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    samp_rate: '3200000'
+    type: fc32
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [320, 436.0]
+    rotation: 0
+    state: true
+
+connections:
+- [blocks_complex_to_mag_0, '0', interp_fir_filter_xxx_0, '0']
+- [blocks_complex_to_mag_0, '0', qtgui_time_sink_x_0_1_0_0_1, '0']
+- [blocks_threshold_ff_0, '0', ook_demod_block, '0']
+- [blocks_threshold_ff_0, '0', qtgui_time_sink_x_0_1_0, '0']
+- [interp_fir_filter_xxx_0, '0', qtgui_time_sink_x_0_1_0_0, '0']
+- [interp_fir_filter_xxx_0, '0', rational_resampler_xxx_0, '0']
+- [rational_resampler_xxx_0, '0', blocks_threshold_ff_0, '0']
+- [rational_resampler_xxx_0, '0', qtgui_time_sink_x_0_1_0_0_0, '0']
+- [soapy_rtlsdr_source_0, '0', blocks_complex_to_mag_0, '0']
+
+metadata:
+  file_format: 1
+  grc_version: 3.10.8.0
