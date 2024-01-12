@@ -9,6 +9,11 @@ be the parameters. All of them are required to have default values!
 import numpy as np
 from gnuradio import gr
 import sys
+import json
+import sqlite3
+from sqlite3 import Error
+import os
+
 
 data_set = np.array([])
 start = int(0)
@@ -19,9 +24,98 @@ keep_track_flag = int(0)
 old_message = []
 number_of_bits = 25 # TODO - ustawić to bardziej w dynamiczny sposob
 
+TABLE_STRUCTURE = """
+    CREATE TABLE IF NOT EXISTS signals (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        bits TEXT NOT NULL
+    );
+"""
+
+class DBHandler:
+    def __init__(self, debug=None):
+        self.connection = None
+        self.debug = debug
+
+    def __get_current_db_path(self, db_name):
+        self.__debug_printer("Ścieżka do bazy to: " + os.path.join(os.getcwd(), db_name))
+        return os.path.join(os.getcwd(), db_name)
+
+    def __db_exists(self, db_name):
+        return os.path.exists(self.__get_current_db_path(db_name))
+    
+    def __debug_printer(self, message):
+        if self.debug:
+            print(message)
+        else:
+            print("", end="")
+
+    def create_db(self, db_name):
+        if not self.__db_exists(db_name):
+            try:
+                self.create_connection(db_name)
+                cursor = self.connection.cursor()
+                cursor.execute(TABLE_STRUCTURE)
+                self.connection.commit()
+                self.__debug_printer("Tabela została utworzona")
+            except Error as e:
+                self.__debug_printer(f"Błąd {e}")
+        else:
+            self.__debug_printer("Baza danych już istnieje")
+            self.connection = sqlite3.connect(self.__get_current_db_path(db_name))
+
+    def create_connection(self, db_name):
+        try:
+            self.connection = sqlite3.connect(db_name)
+            self.__debug_printer(f"Połączenie z bazą danych {db_name} udane")
+        except Error as e:
+            self.__debug_printer(f"Błąd {e}")
+
+    def add_data(self, value):
+        query = "INSERT INTO signals (bits) VALUES (?);"
+        data = (value, )
+        try:
+            cursor = self.connection.cursor()
+            cursor.execute(query, data)
+            self.connection.commit()
+        except Error as e:
+            self.__debug_printer(f"Błąd {e}")
+
+    def read_data_all(self):
+        query = "SELECT * FROM signals;"
+        try:
+            cursor = self.connection.cursor()
+            cursor.execute(query)
+            rows = cursor.fetchall()
+            self.__debug_printer("Odczytane dane:")
+            for row in rows:
+                self.__debug_printer(row)
+            return rows
+        except Error as e:
+            self.__debug_printer(f"Błąd {e}")
+
+    def read_data_single_row(self, index):
+        query = "SELECT * FROM signals WHERE id = ?;"
+        data = (index, )
+        try:
+            cursor = self.connection.cursor()
+            cursor.execute(query, data)
+            rows = cursor.fetchall()
+            return rows
+        except Error as e:
+            self.__debug_printer(f"Błąd {e}")
+
+    def delete_rows_table(self, table_name):
+        query = "DELETE FROM " + table_name
+        try:
+            cursor = self.connection.cursor()
+            cursor.execute(query)
+        except Error as e:
+            self.__debug_printer(f"Błąd {e}")
+
+
 class blk(gr.sync_block):  # other base classes are basic_block, decim_block, interp_block
     """Embedded Python Block example - a simple multiply const"""
-    
 
     def __init__(self, preamble_bits=1, edge_offset=1, dead_space=1):  # only default arguments here
         """arguments to this function show up as parameters in GRC"""
@@ -36,6 +130,113 @@ class blk(gr.sync_block):  # other base classes are basic_block, decim_block, in
         self.preamble_bits = preamble_bits
         self.edge_offset = edge_offset
         self.dead_space = dead_space
+        self.db_name = "ook_demod_db.db"
+
+        self.DBHandler = DBHandler(debug=True)
+        self.DBHandler.create_db(self.db_name)
+        
+
+    @staticmethod
+    def return_distances(signal):
+
+        last_rising_edge = None
+        distances = []
+
+        for i in range(1, len(signal)):
+            # Check if the current value is 1 and the previous value is 0 (rising edge)
+            if signal[i] == 1 and signal[i-1] == 0:
+
+                # Calculate and annotate the distance from the last rising edge, if it exists
+                if last_rising_edge is not None:
+                    distance = i - last_rising_edge
+                    distances.append(distance)
+                last_rising_edge = i
+        return distances
+    
+    @staticmethod
+    def group_distances(distances, tolerance=0.1):
+        groups = {}
+        for d in distances:
+            placed = False
+            for center in groups:
+                if (1 - tolerance) * center <= d <= (1 + tolerance) * center:
+                    groups[center].append(d)
+                    placed = True
+                    break
+            if not placed:
+                groups[d] = [d]
+        return groups
+
+    @staticmethod
+    def find_average_of_most_frequent_group(distances, tolerance=0.15):
+        # Group the distances
+        groups = blk.group_distances(distances, tolerance)
+
+        # Find the most frequent group
+        most_frequent_group = max(groups, key=lambda k: len(groups[k]))
+
+        # Calculate the average of the most frequent group
+        average_of_group = sum(groups[most_frequent_group]) / len(groups[most_frequent_group])
+
+        return average_of_group
+    
+    @staticmethod
+    def return_distances_and_count_highs(signal, artificial_bin_width):
+
+        last_rising_edge = None
+        distances_and_counts = []
+
+        for i in range(1, len(signal)):
+            if signal[i] == 1 and signal[i-1] == 0:
+                if last_rising_edge is not None:
+                    distance = i - last_rising_edge
+                    high_states_count = sum(signal[last_rising_edge:i])
+                    distances_and_counts.append((distance, high_states_count))
+                    
+                last_rising_edge = i
+
+        # Obliczanie odległości i ilości jedynek dla sztucznego binu
+        if last_rising_edge is not None:
+            artificial_distance = artificial_bin_width
+            # Liczenie jedynek w sztucznym binie
+            end_of_artificial_bin = last_rising_edge + artificial_distance
+            high_states_count = sum(signal[last_rising_edge:end_of_artificial_bin])
+            distances_and_counts.append((artificial_distance, high_states_count))
+
+        return distances_and_counts
+
+    @staticmethod
+    def filter_tuples_within_range(tuples_list, center_value, percentage=10):
+        # Obliczanie zakresu
+        range_min = center_value - (center_value * percentage / 100)
+        range_max = center_value + (center_value * percentage / 100)
+
+        # Filtrowanie tupli
+        filtered_list = [t for t in tuples_list if range_min <= t[0] <= range_max]
+        return filtered_list
+
+    @staticmethod
+    def decode(tuples_list):
+        results = []
+        for first, second in tuples_list:
+            if first != 0:  # Aby uniknąć dzielenia przez zero
+                ratio = second / first
+                flag = 1 if ratio > 0.5 else 0
+            else:
+                flag = 0  # W przypadku gdy pierwszy element jest równy 0
+            results.append(flag)
+        return results
+
+    @staticmethod
+    def get_message_from_dataset(data_set):
+        
+        distances = blk.return_distances(data_set)
+        average_of_most_frequent = blk.find_average_of_most_frequent_group(distances)
+        distances_and_counts = blk.return_distances_and_count_highs(data_set, int(average_of_most_frequent))
+        filtered_list = blk.filter_tuples_within_range(distances_and_counts, int(average_of_most_frequent))
+        message = blk.decode(filtered_list)
+        
+        return message
 
     def work(self, input_items, output_items):
         """example: multiply with constant"""
@@ -76,6 +277,7 @@ class blk(gr.sync_block):  # other base classes are basic_block, decim_block, in
             
         #look for a trailing edge (looking for silence)
         if state == 3:
+            """
             #Keep storing the data while looking for the trailing edge. 
             data_set = np.append( data_set, in0)
             #Calculate sample 1 minus sample 2. This looks for any edge positive or negative.
@@ -89,202 +291,34 @@ class blk(gr.sync_block):  # other base classes are basic_block, decim_block, in
                 if size > self.dead_space: #This value is imperically found.
                     size = 0
                     state = 4
+                    """
+            # Keep storing the data while looking for the trailing edge.
+            data_set = np.append(data_set, in0)
+            # Calculate sample 1 minus sample 2. This looks for any edge positive or negative.
+            trailing_edge = np.abs(in0[:-1] - in0[1:]) > 0.5
+            # Check if any go positive.
+            if np.any(trailing_edge == True):
+                size = 0
+            else:
+                size = size + len(in0)
+                # if a long enough stretch is found after the message then it ended.
+                if size > self.dead_space:  # This value is empirically found.
+                    size = 0
+                    state = 4
+                    # Convert numpy array to list for JSON serialization
+                    data_list = data_set.tolist()
+                    # Write data_list to a JSON file
+                    with open('data_set_drogi_pilot.json', 'w') as file:
+                        json.dump(data_list, file)
             
         #analyze the data
         if state == 4:
             
+            data = blk.get_message_from_dataset(data_set)
+            print(data)
+            self.DBHandler.create_connection(self.db_name)
+            self.DBHandler.add_data("".join(str(one) for one in data))
             
-            #file = open('C:\logs\data_set.txt','a')
-            #intermediate = data_set.astype(int)
-            #intermediate2 = ",\r".join(intermediate.astype(str))
-            #file.write(intermediate2)
-            #file.write("\r,space\r,")
-            #file.close()
-            
-            
-            #If the data set is greater than 70000 the it is the first packet
-            #The first packet has a wake up signal of 72 bits and then the message.
-            if len(data_set) > 30000:
-                #Find the edges
-                edges = np.abs(data_set[:-1] - data_set[1:]) > 0.5
-                #Grab the locations of the edges.
-                edge_locations = np.where(edges)[0]
-                #Find the difference between the edges.
-                edge_difference = edge_locations[1:] - edge_locations[:-1]
-                #debug
-                #print 'data length', len(data_set)
-                #print 'edge diferences', edge_difference[:20]
-                #Grab the edge difference into the packet preamble.
-                try:
-                    #Sometime this picks up garbadge and the try helps to keep it from crashing
-                    # nie mamy preambuly - chcemy inaczej wyliczyć srednią: TODO
-                    average = edge_difference[self.preamble_bits * 2]
-                    average_found = True
-                except:
-                    average_found = False
-                #Make sure that there are enough edges to do something usefull. 
-                if average_found and len(edge_difference) > (self.preamble_bits * 2):
-                    #Trim down how big the edge difference is.
-                    edge_difference = edge_difference[:self.preamble_bits * 2]
-                    #print 'average', average
-                    #Filter edge_difference to eliminate everything greater than 110% and less than 90%
-                    #This should eliminate everything at the begining that is not the preable. 
-                    looking_for_start_edge_positive = edge_difference < (average * 1.1)
-                    looking_for_start_edge_negative = edge_difference > (average * 0.9)
-                    #Logical and together the two to get something that eliminates both. 
-                    looking_for_start_edge = np.logical_and(looking_for_start_edge_positive, looking_for_start_edge_negative)
-                    #print looking_for_start_edge[:15]
-                    #Grab all the locations that are true. 
-                    check_if_consecutive = np.where(looking_for_start_edge)[0]
-                    #print 'check if consecutive', check_if_consecutive
-                    #print 'len of check if consecutive', len( check_if_consecutive)
-                    #Create an array that should be the same if it is consecutive. 
-                    consecutive_array = np.arange(check_if_consecutive[0], check_if_consecutive[-1] + 1)
-                    #print 'consecutive array', consecutive_array
-                    #Ther arrays may be different sizes and causing the check to throw and exception.
-                    
-                    
-                    #Set compare to false ahead of time.
-                    compare = False
-                    for i in range(3):
-                        #If they are different sizes then they can't be consecuitve.
-                        if len( check_if_consecutive) == len( consecutive_array):
-                            #Compare together the consecutive array and the check if consecutive. 
-                            #If the arrays are not consecutive the check will fail. 
-                            if np.all(np.equal(check_if_consecutive, consecutive_array)):
-                                compare = True
-                                #If the arrays are consecutive leave the for loop.
-                                break
-                        #Sometimes just one stray edge is the correct size.
-                        #Try trimming the first edge and check for consecutive.
-                        #Because of the for loop this is done up to 3 times. 
-                        #If the array is not consecutive by then, it won't be. 
-                        check_if_consecutive = check_if_consecutive[1:]
-                        #Create an array that should be the same if it is consecutive. 
-                        consecutive_array = np.arange(check_if_consecutive[0], check_if_consecutive[-1] + 1)
-                    if compare:
-                        #Average together the preamble to get what the clock speed is. 
-                        period = int(np.average(edge_difference[check_if_consecutive[0]: check_if_consecutive[-1] + 1]))
-                        #debug
-                        #print 'check_if_consecutive', check_if_consecutive[0]
-                        #print 'edge locations', edge_locations[:10]
-                        #print 'the preable was consecustive', edge_locations[check_if_consecutive[0]]
-                        #This is where the leading edge of the preable is. 
-                        #It is offset by one to properly align the manchester coding.
-                        start = edge_locations[check_if_consecutive[0]]
-                        #Trim edge locations
-                        edge_locations = edge_locations[check_if_consecutive[0]:]
-                        
-                        
-                        #Now create a sampling array that alignes with the data. 
-                        ticks_positive = np.arange(start - self.edge_offset, (start - self.edge_offset) + (period * 88), period, dtype=np.int)
-                        ticks_negative = np.arange(start + self.edge_offset, (start - self.edge_offset) + (period * 88), period, dtype=np.int)
-                        
-                        # To keep things from crashing
-                        if ticks_negative[-1] < len(data_set):
-                            #The data seems to have some gitter or drift. 
-                            #Make an array of only desired edges.
-                            optimised_edges = np.array([edge_locations[0]])
-                            for g in range(1,len(edge_locations)):
-                                if((edge_locations[g]-optimised_edges[-1])<(period*1.2))and((edge_locations[g]-optimised_edges[-1])>(period*0.8)):
-                                    optimised_edges = np.append(optimised_edges,edge_locations[g])
-                            #Now that we have the edges we can optimise the sampling locations.
-                            for h in range(len(optimised_edges)):
-                                if ticks_positive[h] >= optimised_edges[h]:
-                                    adjustment = ticks_positive[h] - optimised_edges[h] + self.edge_offset
-                                    ticks_negative[h:] -= adjustment
-                                    ticks_positive[h:] -= adjustment
-                                    
-                                if ticks_negative[h] <= optimised_edges[h]:
-                                    adjustment = optimised_edges[h] - ticks_negative[h] + self.edge_offset
-                                    ticks_negative[h:] += adjustment
-                                    ticks_positive[h:] += adjustment
-                            
-                            # Convert the data to high and low 
-                            converted_data = data_set > 0.5
-                            #Reshape the data 
-                            # TODO 88 = 11 bytes * 8 (bytes to bit)
-                            positive_packet = converted_data[ticks_positive].reshape(88)
-                            neagtive_packet = converted_data[ticks_negative].reshape(88)
-                            
-                            # if keep_track_flag == 0:
-                                # file = open('C:\logs\data_set.txt','a')
-                                # intermediate = data_set.astype(int)
-                                # intermediate2 = ",\r".join(intermediate.astype(str))
-                                # file.write(intermediate2)
-                                # file.write(",\r space,\r")
-                                # intermediate =  ",\r".join(ticks_positive.astype(str))
-                                # file.write(intermediate)
-                                # file.write(",\r space,\r")
-                                # intermediate =  ",\r".join(ticks_negative.astype(str))
-                                # file.write(intermediate)
-                                # file.write(",\r space,\r")
-                                # file.close()
-                                # keep_track_flag = 1
-                            
-                            
-                            # Weryfikacja wiadomosci przy Manchester decoding
-                            if np.all(np.logical_xor(positive_packet,neagtive_packet)):
-                                #Without knowing what the information is supposed to look like
-                                #it is a 50/50 chance as to using the positive packet or negative packet.
-                                #The difference being that one gives you IEEE manchester coding
-                                #and the other gives you Thomas coding. 
-                                packet = positive_packet.reshape(number_of_bits,8)
-                                message = []
-                                message2 = np.zeros((number_of_bits,), dtype=int)
-                                for j in range(number_of_bits):
-                                    decimal = sum([packet[j,7-i]*2**i for i in range(len(packet[j,]))])
-                                    message2[j] = decimal
-                                    message.append(str("{0:#0{1}x}".format(decimal,4)))
-                                print(message)
-                                
-                                if old_message != message:
-                                    old_message = message
-                                    print(message[2:])
-                                    message2[8] = message2[8] - 27
-                                    if message2[8] < 0:
-                                        message2[8] = 256 + message2[8]
-                                        
-                                    message2[7] += 1
-                                    if message2[7] > 255:
-                                        message2[7] = 0
-                                        message2[6] += 1
-                                        if message2[5] > 255:
-                                            message2[5] = 0
-                                            
-                                    message2[10] = np.sum(message2[2:10])
-                                    while message2[10] > 255:
-                                        message2[10] -= 256
-                                    message3 = []
-                                    for j in range(number_of_bits):
-                                        message3.append(str("{0:#0{1}x}".format(message2[j],4)))
-                                        
-                                    print("The next message is")
-                                    print(message3[2:])
-                                    
-                                    # concatinated_message = []
-                                    # for j in range(11):
-                                        # decimal = sum([packet[j,7-i]*2**i for i in range(len(packet[j,]))])
-                                        # concatinated_message.append(str("{0:02x}".format(decimal,2)))
-                                    
-                                    
-                                    # file = open('C:\logs\data_set.txt','a')
-                                    # intermediate = "".join(concatinated_message)
-                                    # file.write(intermediate)
-                                    # file.write(" ")
-                                    # file.close()
-                                    
-                            else:
-                                print('The xor did not resolve.')
-                        else:
-                            print('index out during reshape', len( data_set), ticks_negative[-1])
-                         
-                    else:
-                        print('the preable was not consecustive', check_if_consecutive, len( check_if_consecutive))
-                else:
-                    print('average failed')
-            else:
-                print('the data set was too short')
             #Reset all the variable for another go around
             state = 1
             size = 0

@@ -255,215 +255,131 @@ blocks:
       \ GRC will instantiate the first class it finds\nto get ports and parameters\
       \ of your block. The arguments to __init__  will\nbe the parameters. All of\
       \ them are required to have default values!\n\"\"\"\n\nimport numpy as np\n\
-      from gnuradio import gr\nimport sys\n\ndata_set = np.array([])\nstart = int(0)\n\
-      stop = int(0)\nsize = int(0)\nstate = int(1)\nkeep_track_flag = int(0)\nold_message\
-      \ = []\nnumber_of_bits = 25 # TODO - ustawi\u0107 to bardziej w dynamiczny sposob\n\
-      \nclass blk(gr.sync_block):  # other base classes are basic_block, decim_block,\
-      \ interp_block\n    \"\"\"Embedded Python Block example - a simple multiply\
-      \ const\"\"\"\n    \n\n    def __init__(self, preamble_bits=1, edge_offset=1,\
-      \ dead_space=1):  # only default arguments here\n        \"\"\"arguments to\
-      \ this function show up as parameters in GRC\"\"\"\n        gr.sync_block.__init__(\n\
-      \            self,\n            name='OOK Custom Decoder',   # will show up\
-      \ in GRC\n            in_sig=[np.float32],\n            out_sig=None\n     \
-      \   )\n        # if an attribute with the same name as a parameter is found,11\n\
-      \        # a callback is registered (properties work, too).\n        self.preamble_bits\
-      \ = preamble_bits\n        self.edge_offset = edge_offset\n        self.dead_space\
-      \ = dead_space\n\n    def work(self, input_items, output_items):\n        \"\
-      \"\"example: multiply with constant\"\"\"\n        in0 = np.array(input_items[0])\n\
-      \        \n        global state\n        global data_set\n        global start\n\
-      \        global stop\n        global size\n        global keep_track_flag\n\
-      \        global old_message\n        \n        if state == 1:\n            #Looking\
-      \ for a blank space before the message.\n            if np.any(in0 > 0.5):\n\
-      \                #Reset size and start over. \n                size = 0\n  \
-      \          else:\n                size = size + len(in0)\n                #Once\
-      \ enough blank space has gone by start looking for the message.\n          \
-      \      if size > self.dead_space: #This value is imperically found. \n     \
-      \               size = 0\n                    state = 2\n        \n        #look\
-      \ for a leading edge\n        if state == 2:\n            #Calculate sample\
-      \ 1 minus sample 2. This looks for any edge positive or negative. \n       \
-      \     leading_edge = np.abs(in0[:-1] - in0[1:]) > .5\n            #Check if\
-      \ any edge is found. \n            if np.any(leading_edge == True):\n      \
-      \          #When edge is found start looking for the trailing edge\n       \
-      \         state = 3\n                #Store the data because it will span several\
-      \ frames.\n                data_set = np.append(data_set, in0)\n           \
-      \     \n            \n            \n        #look for a trailing edge (looking\
-      \ for silence)\n        if state == 3:\n            #Keep storing the data while\
-      \ looking for the trailing edge. \n            data_set = np.append( data_set,\
-      \ in0)\n            #Calculate sample 1 minus sample 2. This looks for any edge\
-      \ positive or negative.\n            trailing_edge = np.abs(in0[:-1] - in0[1:])\
-      \ > 0.5\n            #Check if any go positive. \n            if np.any(trailing_edge\
-      \ == True):\n                size = 0\n            else:\n                size\
-      \ = size + len(in0)\n                #if a long enough stretch is found after\
-      \ the message the it ended. \n                if size > self.dead_space: #This\
-      \ value is imperically found.\n                    size = 0\n              \
-      \      state = 4\n            \n        #analyze the data\n        if state\
-      \ == 4:\n            \n            \n            #file = open('C:\\logs\\data_set.txt','a')\n\
-      \            #intermediate = data_set.astype(int)\n            #intermediate2\
-      \ = \",\\r\".join(intermediate.astype(str))\n            #file.write(intermediate2)\n\
-      \            #file.write(\"\\r,space\\r,\")\n            #file.close()\n   \
-      \         \n            \n            #If the data set is greater than 70000\
-      \ the it is the first packet\n            #The first packet has a wake up signal\
-      \ of 72 bits and then the message.\n            if len(data_set) > 30000:\n\
-      \                #Find the edges\n                edges = np.abs(data_set[:-1]\
-      \ - data_set[1:]) > 0.5\n                #Grab the locations of the edges.\n\
-      \                edge_locations = np.where(edges)[0]\n                #Find\
-      \ the difference between the edges.\n                edge_difference = edge_locations[1:]\
-      \ - edge_locations[:-1]\n                #debug\n                #print 'data\
-      \ length', len(data_set)\n                #print 'edge diferences', edge_difference[:20]\n\
-      \                #Grab the edge difference into the packet preamble.\n     \
-      \           try:\n                    #Sometime this picks up garbadge and the\
-      \ try helps to keep it from crashing\n                    # nie mamy preambuly\
-      \ - chcemy inaczej wyliczy\u0107 sredni\u0105: TODO\n                    average\
-      \ = edge_difference[self.preamble_bits * 2]\n                    average_found\
-      \ = True\n                except:\n                    average_found = False\n\
-      \                #Make sure that there are enough edges to do something usefull.\
-      \ \n                if average_found and len(edge_difference) > (self.preamble_bits\
-      \ * 2):\n                    #Trim down how big the edge difference is.\n  \
-      \                  edge_difference = edge_difference[:self.preamble_bits * 2]\n\
-      \                    #print 'average', average\n                    #Filter\
-      \ edge_difference to eliminate everything greater than 110% and less than 90%\n\
-      \                    #This should eliminate everything at the begining that\
-      \ is not the preable. \n                    looking_for_start_edge_positive\
-      \ = edge_difference < (average * 1.1)\n                    looking_for_start_edge_negative\
-      \ = edge_difference > (average * 0.9)\n                    #Logical and together\
-      \ the two to get something that eliminates both. \n                    looking_for_start_edge\
-      \ = np.logical_and(looking_for_start_edge_positive, looking_for_start_edge_negative)\n\
-      \                    #print looking_for_start_edge[:15]\n                  \
-      \  #Grab all the locations that are true. \n                    check_if_consecutive\
-      \ = np.where(looking_for_start_edge)[0]\n                    #print 'check if\
-      \ consecutive', check_if_consecutive\n                    #print 'len of check\
-      \ if consecutive', len( check_if_consecutive)\n                    #Create an\
-      \ array that should be the same if it is consecutive. \n                   \
-      \ consecutive_array = np.arange(check_if_consecutive[0], check_if_consecutive[-1]\
-      \ + 1)\n                    #print 'consecutive array', consecutive_array\n\
-      \                    #Ther arrays may be different sizes and causing the check\
-      \ to throw and exception.\n                    \n                    \n    \
-      \                #Set compare to false ahead of time.\n                    compare\
-      \ = False\n                    for i in range(3):\n                        #If\
-      \ they are different sizes then they can't be consecuitve.\n               \
-      \         if len( check_if_consecutive) == len( consecutive_array):\n      \
-      \                      #Compare together the consecutive array and the check\
-      \ if consecutive. \n                            #If the arrays are not consecutive\
-      \ the check will fail. \n                            if np.all(np.equal(check_if_consecutive,\
-      \ consecutive_array)):\n                                compare = True\n   \
-      \                             #If the arrays are consecutive leave the for loop.\n\
-      \                                break\n                        #Sometimes just\
-      \ one stray edge is the correct size.\n                        #Try trimming\
-      \ the first edge and check for consecutive.\n                        #Because\
-      \ of the for loop this is done up to 3 times. \n                        #If\
-      \ the array is not consecutive by then, it won't be. \n                    \
-      \    check_if_consecutive = check_if_consecutive[1:]\n                     \
-      \   #Create an array that should be the same if it is consecutive. \n      \
-      \                  consecutive_array = np.arange(check_if_consecutive[0], check_if_consecutive[-1]\
-      \ + 1)\n                    if compare:\n                        #Average together\
-      \ the preamble to get what the clock speed is. \n                        period\
-      \ = int(np.average(edge_difference[check_if_consecutive[0]: check_if_consecutive[-1]\
-      \ + 1]))\n                        #debug\n                        #print 'check_if_consecutive',\
-      \ check_if_consecutive[0]\n                        #print 'edge locations',\
-      \ edge_locations[:10]\n                        #print 'the preable was consecustive',\
-      \ edge_locations[check_if_consecutive[0]]\n                        #This is\
-      \ where the leading edge of the preable is. \n                        #It is\
-      \ offset by one to properly align the manchester coding.\n                 \
-      \       start = edge_locations[check_if_consecutive[0]]\n                  \
-      \      #Trim edge locations\n                        edge_locations = edge_locations[check_if_consecutive[0]:]\n\
-      \                        \n                        \n                      \
-      \  #Now create a sampling array that alignes with the data. \n             \
-      \           ticks_positive = np.arange(start - self.edge_offset, (start - self.edge_offset)\
-      \ + (period * 88), period, dtype=np.int)\n                        ticks_negative\
-      \ = np.arange(start + self.edge_offset, (start - self.edge_offset) + (period\
-      \ * 88), period, dtype=np.int)\n                        \n                 \
-      \       # To keep things from crashing\n                        if ticks_negative[-1]\
-      \ < len(data_set):\n                            #The data seems to have some\
-      \ gitter or drift. \n                            #Make an array of only desired\
-      \ edges.\n                            optimised_edges = np.array([edge_locations[0]])\n\
-      \                            for g in range(1,len(edge_locations)):\n      \
-      \                          if((edge_locations[g]-optimised_edges[-1])<(period*1.2))and((edge_locations[g]-optimised_edges[-1])>(period*0.8)):\n\
-      \                                    optimised_edges = np.append(optimised_edges,edge_locations[g])\n\
-      \                            #Now that we have the edges we can optimise the\
-      \ sampling locations.\n                            for h in range(len(optimised_edges)):\n\
-      \                                if ticks_positive[h] >= optimised_edges[h]:\n\
-      \                                    adjustment = ticks_positive[h] - optimised_edges[h]\
-      \ + self.edge_offset\n                                    ticks_negative[h:]\
-      \ -= adjustment\n                                    ticks_positive[h:] -= adjustment\n\
-      \                                    \n                                if ticks_negative[h]\
-      \ <= optimised_edges[h]:\n                                    adjustment = optimised_edges[h]\
-      \ - ticks_negative[h] + self.edge_offset\n                                 \
-      \   ticks_negative[h:] += adjustment\n                                    ticks_positive[h:]\
-      \ += adjustment\n                            \n                            #\
-      \ Convert the data to high and low \n                            converted_data\
-      \ = data_set > 0.5\n                            #Reshape the data \n       \
-      \                     # TODO 88 = 11 bytes * 8 (bytes to bit)\n            \
-      \                positive_packet = converted_data[ticks_positive].reshape(88)\n\
-      \                            neagtive_packet = converted_data[ticks_negative].reshape(88)\n\
-      \                            \n                            # if keep_track_flag\
-      \ == 0:\n                                # file = open('C:\\logs\\data_set.txt','a')\n\
-      \                                # intermediate = data_set.astype(int)\n   \
-      \                             # intermediate2 = \",\\r\".join(intermediate.astype(str))\n\
-      \                                # file.write(intermediate2)\n             \
-      \                   # file.write(\",\\r space,\\r\")\n                     \
-      \           # intermediate =  \",\\r\".join(ticks_positive.astype(str))\n  \
-      \                              # file.write(intermediate)\n                \
-      \                # file.write(\",\\r space,\\r\")\n                        \
-      \        # intermediate =  \",\\r\".join(ticks_negative.astype(str))\n     \
-      \                           # file.write(intermediate)\n                   \
-      \             # file.write(\",\\r space,\\r\")\n                           \
-      \     # file.close()\n                                # keep_track_flag = 1\n\
-      \                            \n                            \n              \
-      \              # Weryfikacja wiadomosci przy Manchester decoding\n         \
-      \                   if np.all(np.logical_xor(positive_packet,neagtive_packet)):\n\
-      \                                #Without knowing what the information is supposed\
-      \ to look like\n                                #it is a 50/50 chance as to\
-      \ using the positive packet or negative packet.\n                          \
-      \      #The difference being that one gives you IEEE manchester coding\n   \
-      \                             #and the other gives you Thomas coding. \n   \
-      \                             packet = positive_packet.reshape(number_of_bits,8)\n\
-      \                                message = []\n                            \
-      \    message2 = np.zeros((number_of_bits,), dtype=int)\n                   \
-      \             for j in range(number_of_bits):\n                            \
-      \        decimal = sum([packet[j,7-i]*2**i for i in range(len(packet[j,]))])\n\
-      \                                    message2[j] = decimal\n               \
-      \                     message.append(str(\"{0:#0{1}x}\".format(decimal,4)))\n\
-      \                                print(message)\n                          \
-      \      \n                                if old_message != message:\n      \
-      \                              old_message = message\n                     \
-      \               print(message[2:])\n                                    message2[8]\
-      \ = message2[8] - 27\n                                    if message2[8] < 0:\n\
-      \                                        message2[8] = 256 + message2[8]\n \
-      \                                       \n                                 \
-      \   message2[7] += 1\n                                    if message2[7] > 255:\n\
-      \                                        message2[7] = 0\n                 \
-      \                       message2[6] += 1\n                                 \
-      \       if message2[5] > 255:\n                                            message2[5]\
-      \ = 0\n                                            \n                      \
-      \              message2[10] = np.sum(message2[2:10])\n                     \
-      \               while message2[10] > 255:\n                                \
-      \        message2[10] -= 256\n                                    message3 =\
-      \ []\n                                    for j in range(number_of_bits):\n\
-      \                                        message3.append(str(\"{0:#0{1}x}\"\
-      .format(message2[j],4)))\n                                        \n       \
-      \                             print(\"The next message is\")\n             \
-      \                       print(message3[2:])\n                              \
-      \      \n                                    # concatinated_message = []\n \
-      \                                   # for j in range(11):\n                \
-      \                        # decimal = sum([packet[j,7-i]*2**i for i in range(len(packet[j,]))])\n\
-      \                                        # concatinated_message.append(str(\"\
-      {0:02x}\".format(decimal,2)))\n                                    \n      \
-      \                              \n                                    # file\
-      \ = open('C:\\logs\\data_set.txt','a')\n                                   \
-      \ # intermediate = \"\".join(concatinated_message)\n                       \
-      \             # file.write(intermediate)\n                                 \
-      \   # file.write(\" \")\n                                    # file.close()\n\
-      \                                    \n                            else:\n \
-      \                               print('The xor did not resolve.')\n        \
-      \                else:\n                            print('index out during\
-      \ reshape', len( data_set), ticks_negative[-1])\n                         \n\
-      \                    else:\n                        print('the preable was not\
-      \ consecustive', check_if_consecutive, len( check_if_consecutive))\n       \
-      \         else:\n                    print('average failed')\n            else:\n\
-      \                print('the data set was too short')\n            #Reset all\
-      \ the variable for another go around\n            state = 1\n            size\
-      \ = 0\n            start = 0\n            stop = 0\n            data_set = np.array([])\n\
-      \        \n        \n        return len(input_items[0])"
+      from gnuradio import gr\nimport sys\nimport json\nimport sqlite3\nfrom sqlite3\
+      \ import Error\nimport os\n\n\ndata_set = np.array([])\nstart = int(0)\nstop\
+      \ = int(0)\nsize = int(0)\nstate = int(1)\nkeep_track_flag = int(0)\nold_message\
+      \ = []\nnumber_of_bits = 25\n\nTABLE_STRUCTURE = \"\"\"\n    CREATE TABLE IF\
+      \ NOT EXISTS signals (\n        id INTEGER PRIMARY KEY AUTOINCREMENT,\n    \
+      \    date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,\n        bits TEXT NOT NULL\n\
+      \    );\n\"\"\"\n\nclass DBHandler:\n    def __init__(self, debug=None):\n \
+      \       self.connection = None\n        self.debug = debug\n\n    def __get_current_db_path(self,\
+      \ db_name):\n        self.__debug_printer(\"\u015Acie\u017Cka do bazy to: \"\
+      \ + os.path.join(os.getcwd(), db_name))\n        return os.path.join(os.getcwd(),\
+      \ db_name)\n\n    def __db_exists(self, db_name):\n        return os.path.exists(self.__get_current_db_path(db_name))\n\
+      \    \n    def __debug_printer(self, message):\n        if self.debug:\n   \
+      \         print(message)\n        else:\n            print(\"\", end=\"\")\n\
+      \n    def create_db(self, db_name):\n        if not self.__db_exists(db_name):\n\
+      \            try:\n                self.create_connection(db_name)\n       \
+      \         cursor = self.connection.cursor()\n                cursor.execute(TABLE_STRUCTURE)\n\
+      \                self.connection.commit()\n                self.__debug_printer(\"\
+      Tabela zosta\u0142a utworzona\")\n            except Error as e:\n         \
+      \       self.__debug_printer(f\"B\u0142\u0105d {e}\")\n        else:\n     \
+      \       self.__debug_printer(\"Baza danych ju\u017C istnieje\")\n          \
+      \  self.connection = sqlite3.connect(self.__get_current_db_path(db_name))\n\n\
+      \    def create_connection(self, db_name):\n        try:\n            self.connection\
+      \ = sqlite3.connect(db_name)\n            self.__debug_printer(f\"Po\u0142\u0105\
+      czenie z baz\u0105 danych {db_name} udane\")\n        except Error as e:\n \
+      \           self.__debug_printer(f\"B\u0142\u0105d {e}\")\n\n    def add_data(self,\
+      \ value):\n        query = \"INSERT INTO signals (bits) VALUES (?);\"\n    \
+      \    data = (value, )\n        try:\n            cursor = self.connection.cursor()\n\
+      \            cursor.execute(query, data)\n            self.connection.commit()\n\
+      \        except Error as e:\n            self.__debug_printer(f\"B\u0142\u0105\
+      d {e}\")\n\n    def read_data_all(self):\n        query = \"SELECT * FROM signals;\"\
+      \n        try:\n            cursor = self.connection.cursor()\n            cursor.execute(query)\n\
+      \            rows = cursor.fetchall()\n            self.__debug_printer(\"Odczytane\
+      \ dane:\")\n            for row in rows:\n                self.__debug_printer(row)\n\
+      \            return rows\n        except Error as e:\n            self.__debug_printer(f\"\
+      B\u0142\u0105d {e}\")\n\n    def read_data_single_row(self, index):\n      \
+      \  query = \"SELECT * FROM signals WHERE id = ?;\"\n        data = (index, )\n\
+      \        try:\n            cursor = self.connection.cursor()\n            cursor.execute(query,\
+      \ data)\n            rows = cursor.fetchall()\n            return rows\n   \
+      \     except Error as e:\n            self.__debug_printer(f\"B\u0142\u0105\
+      d {e}\")\n\n    def delete_rows_table(self, table_name):\n        query = \"\
+      DELETE FROM \" + table_name\n        try:\n            cursor = self.connection.cursor()\n\
+      \            cursor.execute(query)\n        except Error as e:\n           \
+      \ self.__debug_printer(f\"B\u0142\u0105d {e}\")\n\n\nclass blk(gr.sync_block):\
+      \  \n    \"\"\"Embedded Python Block example - a simple multiply const\"\"\"\
+      \n\n    def __init__(self, preamble_bits=1, edge_offset=1, dead_space=1):  #\
+      \ only default arguments here\n        \"\"\"arguments to this function show\
+      \ up as parameters in GRC\"\"\"\n        gr.sync_block.__init__(\n         \
+      \   self,\n            name='OOK Custom Decoder',   # will show up in GRC\n\
+      \            in_sig=[np.float32],\n            out_sig=None\n        )\n   \
+      \     self.preamble_bits = preamble_bits\n        self.edge_offset = edge_offset\n\
+      \        self.dead_space = dead_space\n        self.db_name = \"ook_demod_db.db\"\
+      \n\n        self.DBHandler = DBHandler(debug=True)\n        self.DBHandler.create_db(self.db_name)\n\
+      \        \n\n    @staticmethod\n    def return_distances(signal):\n\n      \
+      \  last_rising_edge = None\n        distances = []\n\n        for i in range(1,\
+      \ len(signal)):\n            # Check if the current value is 1 and the previous\
+      \ value is 0 (rising edge)\n            if signal[i] == 1 and signal[i-1] ==\
+      \ 0:\n\n                # Calculate and annotate the distance from the last\
+      \ rising edge, if it exists\n                if last_rising_edge is not None:\n\
+      \                    distance = i - last_rising_edge\n                    distances.append(distance)\n\
+      \                last_rising_edge = i\n        return distances\n    \n    @staticmethod\n\
+      \    def group_distances(distances, tolerance=0.1):\n        groups = {}\n \
+      \       for d in distances:\n            placed = False\n            for center\
+      \ in groups:\n                if (1 - tolerance) * center <= d <= (1 + tolerance)\
+      \ * center:\n                    groups[center].append(d)\n                \
+      \    placed = True\n                    break\n            if not placed:\n\
+      \                groups[d] = [d]\n        return groups\n\n    @staticmethod\n\
+      \    def find_average_of_most_frequent_group(distances, tolerance=0.15):\n \
+      \       # Group the distances\n        groups = blk.group_distances(distances,\
+      \ tolerance)\n\n        # Find the most frequent group\n        most_frequent_group\
+      \ = max(groups, key=lambda k: len(groups[k]))\n\n        # Calculate the average\
+      \ of the most frequent group\n        average_of_group = sum(groups[most_frequent_group])\
+      \ / len(groups[most_frequent_group])\n\n        return average_of_group\n  \
+      \  \n    @staticmethod\n    def return_distances_and_count_highs(signal, artificial_bin_width):\n\
+      \n        last_rising_edge = None\n        distances_and_counts = []\n\n   \
+      \     for i in range(1, len(signal)):\n            if signal[i] == 1 and signal[i-1]\
+      \ == 0:\n                if last_rising_edge is not None:\n                \
+      \    distance = i - last_rising_edge\n                    high_states_count\
+      \ = sum(signal[last_rising_edge:i])\n                    distances_and_counts.append((distance,\
+      \ high_states_count))\n                    \n                last_rising_edge\
+      \ = i\n\n        # Obliczanie odleg\u0142o\u015Bci i ilo\u015Bci jedynek dla\
+      \ sztucznego binu\n        if last_rising_edge is not None:\n            artificial_distance\
+      \ = artificial_bin_width\n            # Liczenie jedynek w sztucznym binie\n\
+      \            end_of_artificial_bin = last_rising_edge + artificial_distance\n\
+      \            high_states_count = sum(signal[last_rising_edge:end_of_artificial_bin])\n\
+      \            distances_and_counts.append((artificial_distance, high_states_count))\n\
+      \n        return distances_and_counts\n\n    @staticmethod\n    def filter_tuples_within_range(tuples_list,\
+      \ center_value, percentage=10):\n        # Obliczanie zakresu\n        range_min\
+      \ = center_value - (center_value * percentage / 100)\n        range_max = center_value\
+      \ + (center_value * percentage / 100)\n\n        # Filtrowanie tupli\n     \
+      \   filtered_list = [t for t in tuples_list if range_min <= t[0] <= range_max]\n\
+      \        return filtered_list\n\n    @staticmethod\n    def decode(tuples_list):\n\
+      \        results = []\n        for first, second in tuples_list:\n         \
+      \   if first != 0:  # Aby unikn\u0105\u0107 dzielenia przez zero\n         \
+      \       ratio = second / first\n                flag = 1 if ratio > 0.5 else\
+      \ 0\n            else:\n                flag = 0  # W przypadku gdy pierwszy\
+      \ element jest r\xF3wny 0\n            results.append(flag)\n        return\
+      \ results\n\n    @staticmethod\n    def get_message_from_dataset(data_set):\n\
+      \        \n        distances = blk.return_distances(data_set)\n        average_of_most_frequent\
+      \ = blk.find_average_of_most_frequent_group(distances)\n        distances_and_counts\
+      \ = blk.return_distances_and_count_highs(data_set, int(average_of_most_frequent))\n\
+      \        filtered_list = blk.filter_tuples_within_range(distances_and_counts,\
+      \ int(average_of_most_frequent))\n        message = blk.decode(filtered_list)\n\
+      \        \n        return message\n\n    def work(self, input_items, output_items):\n\
+      \        in0 = np.array(input_items[0])\n        \n        global state\n  \
+      \      global data_set\n        global start\n        global stop\n        global\
+      \ size\n        global keep_track_flag\n        global old_message\n       \
+      \ \n        if state == 1:\n\n            if np.any(in0 > 0.5):\n \n       \
+      \         size = 0\n            else:\n                size = size + len(in0)\n\
+      \n                if size > self.dead_space:  \n                    size = 0\n\
+      \                    state = 2\n        \n        if state == 2:\n\n       \
+      \     leading_edge = np.abs(in0[:-1] - in0[1:]) > .5\n\n            if np.any(leading_edge\
+      \ == True):\n\n                state = 3\n\n                data_set = np.append(data_set,\
+      \ in0)\n\n        if state == 3:\n            data_set = np.append(data_set,\
+      \ in0)\n            trailing_edge = np.abs(in0[:-1] - in0[1:]) > 0.5\n     \
+      \       if np.any(trailing_edge == True):\n                size = 0\n      \
+      \      else:\n                size = size + len(in0)\n\n                if size\
+      \ > self.dead_space:\n                    size = 0\n                    state\
+      \ = 4\n                    data_list = data_set.tolist()\n                 \
+      \   with open('data_set_drogi_pilot.json', 'w') as file:\n                 \
+      \       json.dump(data_list, file)\n        if state == 4:\n            \n \
+      \           data = blk.get_message_from_dataset(data_set)\n            print(data)\n\
+      \            self.DBHandler.create_connection(self.db_name)\n            self.DBHandler.add_data(\"\
+      \".join(str(one) for one in data))\n            \n            state = 1\n  \
+      \          size = 0\n            start = 0\n            stop = 0\n         \
+      \   data_set = np.array([])\n        \n        \n        return len(input_items[0])"
     affinity: ''
     alias: ''
     comment: ''
