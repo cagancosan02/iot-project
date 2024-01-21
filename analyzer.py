@@ -2,9 +2,13 @@ import sqlite3
 from sqlite3 import Error
 import os
 import argparse
+import math
 import sys
 import time
 from datetime import datetime, timedelta
+from collections import Counter
+
+from analyzerdata import analyze_data
 
 
 class DBHandlerAnalyzer:
@@ -23,6 +27,16 @@ class DBHandlerAnalyzer:
             print(message)
         else:
             print("", end="")
+
+    def clear_db_signals(self):
+        query = "DELETE FROM signals"
+        try:
+            cursor = self.connection.cursor()
+            cursor.execute(query)
+            self.connection.commit()
+        except Error as e:
+            self.__debug_printer(f"Błąd {e}")
+
 
     def create_connection(self, db_name):
         try:
@@ -97,16 +111,15 @@ class DBHandlerAnalyzer:
         except Error as e:
             self.__debug_printer(f"Błąd {e}")
 
-def analyze_data(data):
-    pass
 
 def main():
     parser = argparse.ArgumentParser(description="Sub-1GHz detection system")
     parser.add_argument('--db', '-d', type=str, help='Baza danych')
     parser.add_argument('--debug', type=bool, help="Przejdź w tryb debug")
-    parser.add_argument('--records', '-n', type=int, help="Liczba rekordów do cyklicznego pobierania", default=500)
-    parser.add_argument('--seconds', '-s', type=int, help="Ustaw czasowy przedział ostatnich rekordów, podany w sekundach", default=None)
-    parser.add_argument('--interval', '-i', type=int, help="Interwał czasowy pobierania danych do analizy w sekundach", default=10)
+    parser.add_argument('--records', '-n', type=int, help="Liczba rekordów do cyklicznego pobierania [default=500]", default=500)
+    parser.add_argument('--seconds', '-s', type=int, help="Ustaw czasowy przedział ostatnich rekordów, podany w sekundach [default=None]", default=None)
+    parser.add_argument('--interval', '-i', type=int, help="Interwał czasowy pobierania danych do analizy w sekundach [default=10]", default=10)
+    parser.add_argument('--cleardb', '-c', type=int, help="Przy starcie programu, baza danych jest czyszczona", default=True)
 
 
     args = parser.parse_args()
@@ -122,6 +135,9 @@ def main():
 
     newDBHandler.create_connection(args.db)
 
+    if args.cleardb:
+        newDBHandler.clear_db_signals()
+
     if args.interval:
         interval = args.interval
     else:
@@ -131,13 +147,13 @@ def main():
             while True:
                 data = newDBHandler.read_last_records_by_date(args.seconds)
                 analyze_data(data)
-                print(data)
                 time.sleep(interval)
     else:
             while True:
                 data = newDBHandler.read_last_x_records(args.records)
+                print("rozpoczynam analize")
                 analyze_data(data)
-                print(data)
+                print("teraz bedzie sleep")
                 time.sleep(interval)
 
 

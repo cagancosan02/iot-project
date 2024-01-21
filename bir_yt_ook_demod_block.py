@@ -22,7 +22,7 @@ size = int(0)
 state = int(1)
 keep_track_flag = int(0)
 old_message = []
-number_of_bits = 25 # TODO - ustawić to bardziej w dynamiczny sposob
+number_of_bits = 25
 
 TABLE_STRUCTURE = """
     CREATE TABLE IF NOT EXISTS signals (
@@ -114,7 +114,7 @@ class DBHandler:
             self.__debug_printer(f"Błąd {e}")
 
 
-class blk(gr.sync_block):  # other base classes are basic_block, decim_block, interp_block
+class blk(gr.sync_block):  
     """Embedded Python Block example - a simple multiply const"""
 
     def __init__(self, preamble_bits=1, edge_offset=1, dead_space=1):  # only default arguments here
@@ -125,8 +125,6 @@ class blk(gr.sync_block):  # other base classes are basic_block, decim_block, in
             in_sig=[np.float32],
             out_sig=None
         )
-        # if an attribute with the same name as a parameter is found,11
-        # a callback is registered (properties work, too).
         self.preamble_bits = preamble_bits
         self.edge_offset = edge_offset
         self.dead_space = dead_space
@@ -239,7 +237,6 @@ class blk(gr.sync_block):  # other base classes are basic_block, decim_block, in
         return message
 
     def work(self, input_items, output_items):
-        """example: multiply with constant"""
         in0 = np.array(input_items[0])
         
         global state
@@ -251,75 +248,49 @@ class blk(gr.sync_block):  # other base classes are basic_block, decim_block, in
         global old_message
         
         if state == 1:
-            #Looking for a blank space before the message.
+
             if np.any(in0 > 0.5):
-                #Reset size and start over. 
+ 
                 size = 0
             else:
                 size = size + len(in0)
-                #Once enough blank space has gone by start looking for the message.
-                if size > self.dead_space: #This value is imperically found. 
+
+                if size > self.dead_space:  
                     size = 0
                     state = 2
         
-        #look for a leading edge
         if state == 2:
-            #Calculate sample 1 minus sample 2. This looks for any edge positive or negative. 
+
             leading_edge = np.abs(in0[:-1] - in0[1:]) > .5
-            #Check if any edge is found. 
+
             if np.any(leading_edge == True):
-                #When edge is found start looking for the trailing edge
+
                 state = 3
-                #Store the data because it will span several frames.
+
                 data_set = np.append(data_set, in0)
-                
-            
-            
-        #look for a trailing edge (looking for silence)
+
         if state == 3:
-            """
-            #Keep storing the data while looking for the trailing edge. 
-            data_set = np.append( data_set, in0)
-            #Calculate sample 1 minus sample 2. This looks for any edge positive or negative.
-            trailing_edge = np.abs(in0[:-1] - in0[1:]) > 0.5
-            #Check if any go positive. 
-            if np.any(trailing_edge == True):
-                size = 0
-            else:
-                size = size + len(in0)
-                #if a long enough stretch is found after the message the it ended. 
-                if size > self.dead_space: #This value is imperically found.
-                    size = 0
-                    state = 4
-                    """
-            # Keep storing the data while looking for the trailing edge.
             data_set = np.append(data_set, in0)
-            # Calculate sample 1 minus sample 2. This looks for any edge positive or negative.
             trailing_edge = np.abs(in0[:-1] - in0[1:]) > 0.5
-            # Check if any go positive.
             if np.any(trailing_edge == True):
                 size = 0
             else:
                 size = size + len(in0)
-                # if a long enough stretch is found after the message then it ended.
-                if size > self.dead_space:  # This value is empirically found.
+
+                if size > self.dead_space:
                     size = 0
                     state = 4
-                    # Convert numpy array to list for JSON serialization
                     data_list = data_set.tolist()
-                    # Write data_list to a JSON file
                     with open('data_set_drogi_pilot.json', 'w') as file:
                         json.dump(data_list, file)
-            
-        #analyze the data
         if state == 4:
             
             data = blk.get_message_from_dataset(data_set)
-            print(data)
-            self.DBHandler.create_connection(self.db_name)
-            self.DBHandler.add_data("".join(str(one) for one in data))
-            
-            #Reset all the variable for another go around
+            if len(data_set) > 20000:
+                print(data)
+                self.DBHandler.create_connection(self.db_name)
+                self.DBHandler.add_data("".join(str(one) for one in data))
+
             state = 1
             size = 0
             start = 0

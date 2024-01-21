@@ -375,11 +375,12 @@ blocks:
       \ = 4\n                    data_list = data_set.tolist()\n                 \
       \   with open('data_set_drogi_pilot.json', 'w') as file:\n                 \
       \       json.dump(data_list, file)\n        if state == 4:\n            \n \
-      \           data = blk.get_message_from_dataset(data_set)\n            print(data)\n\
-      \            self.DBHandler.create_connection(self.db_name)\n            self.DBHandler.add_data(\"\
-      \".join(str(one) for one in data))\n            \n            state = 1\n  \
-      \          size = 0\n            start = 0\n            stop = 0\n         \
-      \   data_set = np.array([])\n        \n        \n        return len(input_items[0])"
+      \           data = blk.get_message_from_dataset(data_set)\n            if len(data_set)\
+      \ > 20000:\n                print(data)\n                self.DBHandler.create_connection(self.db_name)\n\
+      \                self.DBHandler.add_data(\"\".join(str(one) for one in data))\n\
+      \n            state = 1\n            size = 0\n            start = 0\n     \
+      \       stop = 0\n            data_set = np.array([])\n        \n        \n\
+      \        return len(input_items[0])"
     affinity: ''
     alias: ''
     comment: ''
